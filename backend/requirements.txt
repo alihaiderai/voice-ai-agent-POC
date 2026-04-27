@@ -1,0 +1,27 @@
+# Core Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.20
+websockets>=14.0
+
+# OpenAI (includes all we need - Whisper API, TTS API, GPT-4)
+openai>=1.58.0
+
+# Data Processing (Python 3.14 compatible versions)
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+python-dotenv>=1.0.0
+
+# Sentiment & Emotion (simple, no complex dependencies)
+textblob>=0.18.0
+vaderSentiment>=3.3.2
+
+# Utilities
+aiofiles>=24.0.0
+httpx>=0.28.0
+
+# Basic dependencies
+setuptools>=75.0.0
+typing-extensions>=4.12.0
+
+twilio>=8.0.0

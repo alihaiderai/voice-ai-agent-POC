@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Voice AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="bg-white rounded-3xl shadow-2xl p-8 mb-6 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
+                        <span class="text-5xl">📊</span>
+                        Analytics Dashboard
+                    </h1>
+                    <p class="text-gray-500 mt-2">Real-time call metrics and performance insights</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="index.html" class="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl hover:shadow-xl transition-all font-semibold">
+                        ← Back to Chat
+                    </a>
+                    <select id="daysFilter" class="px-4 py-3 border-2 border-indigo-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-400 font-semibold">
+                        <option value="1">Last 24 hours</option>
+                        <option value="7" selected>Last 7 days</option>
+                        <option value="30">Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <!-- Stats will be loaded here -->
+        </div>
+
+        <!-- Charts Section -->
+        <div id="chartsSection" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Charts will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        let currentDays = 7;
+
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch(`http://localhost:8000/api/analytics/dashboard?days=${currentDays}`);
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.error('Error fetching analytics:', error);
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="col-span-4 text-center py-12 text-gray-500">
+                        <p class="text-xl">❌ Error loading analytics</p>
+                        <p class="text-sm mt-2">Make sure backend is running on http://localhost:8000</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDashboard(stats) {
+            // Render main stats
+            document.getElementById('statsGrid').innerHTML = `
+                ${createStatCard('📞', 'Total Calls', stats.total_calls, 'from-indigo-500 to-purple-500')}
+                ${createStatCard('📥', 'Inbound Calls', stats.inbound_calls, 'from-emerald-500 to-teal-500')}
+                ${createStatCard('📤', 'Outbound Calls', stats.outbound_calls, 'from-blue-500 to-cyan-500')}
+                ${createStatCard('⏱️', 'Avg Duration', stats.avg_duration + 's', 'from-orange-500 to-amber-500')}
+                ${createStatCard('💰', 'Total Cost', '$' + stats.total_cost, 'from-rose-500 to-pink-500', '$' + stats.cost_per_call + ' per call')}
+                ${createStatCard('📈', 'Success Rate', stats.success_rate + '%', 'from-green-500 to-emerald-500')}
+                ${createStatCard('👥', 'Transfer Rate', stats.transfer_rate + '%', 'from-violet-500 to-purple-500')}
+            `;
+
+            // Render charts
+            let chartsHTML = '';
+
+            // Calls by Agent
+            if (Object.keys(stats.calls_by_agent).length > 0) {
+                chartsHTML += `
+                    <div class="bg-white rounded-3xl p-8 shadow-xl fade-in">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <span>👥</span> Calls by Agent
+                        </h3>
+                        <div class="space-y-4">
+                            ${Object.entries(stats.calls_by_agent).map(([agent, count]) => `
+                                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl">
+                                    <span class="font-semibold text-gray-700 capitalize">${agent}</span>
+                                    <span class="text-2xl font-bold text-indigo-600">${count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Calls by Emotion
+            if (Object.keys(stats.calls_by_emotion).length > 0) {
+                const emotionEmojis = {
+                    happy: '😊', sad: '😢', angry: '😠', neutral: '😐',
+                    excited: '🤩', frustrated: '😤', confused: '😕'
+                };
+                chartsHTML += `
+                    <div class="bg-white rounded-3xl p-8 shadow-xl fade-in">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <span>😊</span> Calls by Emotion
+                        </h3>
+                        <div class="space-y-4">
+                            ${Object.entries(stats.calls_by_emotion).map(([emotion, count]) => `
+                                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-3xl">${emotionEmojis[emotion] || '😐'}</span>
+                                        <span class="font-semibold text-gray-700 capitalize">${emotion}</span>
+                                    </div>
+                                    <span class="text-2xl font-bold text-purple-600">${count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Top Queries
+            if (stats.top_queries && stats.top_queries.length > 0) {
+                chartsHTML += `
+                    <div class="bg-white rounded-3xl p-8 shadow-xl fade-in lg:col-span-2">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <span>🔥</span> Top Customer Queries
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${stats.top_queries.slice(0, 6).map((item, index) => `
+                                <div class="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl font-bold text-indigo-600">#${index + 1}</span>
+                                        <span class="text-gray-700">${item.query}</span>
+                                    </div>
+                                    <span class="text-xl font-bold text-purple-600">${item.count}x</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('chartsSection').innerHTML = chartsHTML || `
+                <div class="col-span-2 text-center py-12 text-gray-400">
+                    <p class="text-xl">📊 No data available yet</p>
+                    <p class="text-sm mt-2">Make some calls to see analytics!</p>
+                </div>
+            `;
+        }
+
+        function createStatCard(icon, label, value, gradient, subtext = '') {
+            return `
+                <div class="bg-white rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all fade-in">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-4 rounded-2xl bg-gradient-to-br ${gradient} text-white text-3xl">
+                            ${icon}
+                        </div>
+                        <span class="text-4xl font-bold text-gray-800">${value}</span>
+                    </div>
+                    <p class="text-lg font-semibold text-gray-700">${label}</p>
+                    ${subtext ? `<p class="text-sm text-gray-400 mt-1">${subtext}</p>` : ''}
+                </div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('daysFilter').addEventListener('change', (e) => {
+            currentDays = parseInt(e.target.value);
+            fetchAnalytics();
+        });
+
+        // Initial load
+        fetchAnalytics();
+
+        // Auto-refresh every 30 seconds
+        setInterval(fetchAnalytics, 30000);
+    </script>
+</body>
+</html>
