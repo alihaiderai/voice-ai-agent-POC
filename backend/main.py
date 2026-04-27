@@ -106,6 +106,7 @@ app = FastAPI(
 )
 
 # CORS middleware
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -412,6 +413,7 @@ if __name__ == "__main__":
         reload=settings.debug,
         log_level=settings.log_level.lower()
     )
+
 
 
 # ============================================================================
